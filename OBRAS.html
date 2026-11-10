@@ -132,31 +132,6 @@
       font-size: 0.95rem;
     }
 
-    .btn-option.selected {
-      border-color: var(--accent);
-      background: #1e3a8a;
-    }
-
-    .obra-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #0f172a;
-      padding: 10px 14px;
-      border-radius: 8px;
-      margin-bottom: 8px;
-      border: 1px solid var(--border);
-    }
-
-    .obra-item button {
-      background: var(--danger);
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
     .badge {
       background: #38bdf8;
       color: #0f172a;
@@ -187,7 +162,7 @@
   <div id="screen-lock">
     <div style="text-align: center; margin-bottom: 24px;">
       <h1 style="color: #38bdf8; font-size: 1.6rem;">PAVIMENTOS INDUSTRIALES</h1>
-      <p style="color: var(--text-muted); margin-top: 8px;">Selecciona tu nombre para comenzar</p>
+      <p style="color: var(--text-muted); margin-top: 8px;">Selecciona tu nombre e ingresa tu clave</p>
     </div>
     
     <label for="select-worker-init">¿Quién eres?</label>
@@ -204,6 +179,9 @@
       <option value="MYKHAILO">MYKHAILO</option>
     </select>
 
+    <label for="input-worker-pass">Contraseña:</label>
+    <input type="password" id="input-worker-pass" placeholder="Introduce tu clave personal">
+
     <button class="btn btn-primary" onclick="confirmIdentity()">ENTRAR AL PARTE</button>
   </div>
 
@@ -215,29 +193,15 @@
 
   <div class="container">
     
-    <!-- PASO 1: SELECCIÓN DE OBRA Y FECHA -->
+    <!-- PASO 1: ESCRITURA DE OBRA Y FECHA -->
     <div class="card">
       <h2>1. Fecha y Obra</h2>
       
-      <label>Fecha del Parte</label>
+      <label for="input-fecha">Fecha del Parte</label>
       <input type="date" id="input-fecha">
 
-      <label>Obra Asignada</label>
-      <select id="select-obra"></select>
-
-      <button class="btn-option" style="background: transparent; border: 1px dashed var(--accent); color: #38bdf8;" onclick="toggleGestionObras()">
-        ⚙️ Añadir / Eliminar Obras de la Lista
-      </button>
-
-      <!-- GESTIÓN DINÁMICA DE OBRAS -->
-      <div id="section-obras-manager" class="hidden" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);">
-        <label>Nueva Obra</label>
-        <div style="display: flex; gap: 8px;">
-          <input type="text" id="nueva-obra-nombre" placeholder="Nombre / Código de Obra" style="margin: 0;">
-          <button class="btn btn-primary" style="width: auto; white-space: nowrap;" onclick="agregarObra()">Añadir</button>
-        </div>
-        <div id="lista-obras-container" style="margin-top: 14px;"></div>
-      </div>
+      <label for="input-obra">Nombre / Código de la Obra</label>
+      <input type="text" id="input-obra" placeholder="Escribe aquí el nombre o dirección de la obra...">
     </div>
 
     <!-- PASO 2: PREGUNTA CLAVE DE ASISTENCIA A LA OBRA -->
@@ -262,7 +226,7 @@
       </div>
     </div>
 
-    <!-- PASO 3: TRABAJO REALIZADO (Solo si SI ha estado en obra) -->
+    <!-- PASO 3: TRABAJO REALIZADO -->
     <div id="paso-cumplimiento" class="card hidden">
       <h2>3. Cumplimiento de lo Previsto</h2>
       <p style="margin-bottom: 12px; font-size: 0.95rem;">¿Se ha realizado todo lo planificado para hoy?</p>
@@ -272,10 +236,138 @@
         <button id="btn-plan-no" class="btn btn-option" onclick="setCumplioPlan(false)">NO se terminó</button>
       </div>
 
-      <!-- EXPLICACIÓN SI NO SE CUMPLIÓ LO PREVISTO -->
       <div id="motivo-no-plan" class="hidden" style="margin-top: 14px;">
         <label>Explica por qué no se ha podido realizar todo lo previsto:</label>
         <textarea id="texto-no-plan" rows="3" placeholder="Falta de soporte preparado, fallo de maquinaria, corte de luz..."></textarea>
       </div>
+    </div>
 
-      <div style="
+    <!-- PASO 4: ENVÍO A SUPERVISORES -->
+    <div class="card">
+      <h2>4. Finalizar y Enviar</h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+        El informe se enviará a ambos supervisores (653 63 76 76 y 621 01 19 91).
+      </p>
+      <button class="btn btn-success" onclick="enviarAAmbosSupervisores()">📲 ENVIAR PARTE A SUPERVISORES</button>
+      
+      <div style="margin-top: 12px; display: flex; gap: 8px;">
+        <button class="btn btn-warning" style="font-size: 0.8rem; padding: 10px;" onclick="enviarAWhatsApp('34653637676')">Envia solo a Sup. 1</button>
+        <button class="btn btn-warning" style="font-size: 0.8rem; padding: 10px;" onclick="enviarAWhatsApp('34621011991')">Envia solo a Sup. 2</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // CREDENCIALES DE ACCESO
+    const CREDENCIONALES = {
+      "DAVID": "1234",
+      "EVGENII": "2345",
+      "JORGE": "3456",
+      "ALVARO": "4567",
+      "GONZALO": "5678",
+      "FIDEL": "6789",
+      "JAVIER": "7890",
+      "FERNANDO": "8901",
+      "MYKHAILO": "9012"
+    };
+
+    // TELÉFONOS DE SUPERVISORES DE OBRA
+    const SUPERVISOR_1 = "34653637676";
+    const SUPERVISOR_2 = "34621011991";
+
+    let usuarioActual = "";
+    let estuvoEnObra = true;
+    let cumplioPlan = true;
+
+    // Establecer fecha de hoy por defecto
+    document.getElementById("input-fecha").valueAsDate = new Date();
+
+    function confirmIdentity() {
+      const select = document.getElementById("select-worker-init");
+      const passInput = document.getElementById("input-worker-pass");
+      const selectedWorker = select.value;
+      const enteredPass = passInput.value;
+
+      if (!selectedWorker) {
+        alert("Por favor, selecciona tu nombre.");
+        return;
+      }
+
+      if (CREDENCIONALES[selectedWorker] === enteredPass) {
+        usuarioActual = selectedWorker;
+        document.getElementById("display-user").textContent = usuarioActual;
+        document.getElementById("screen-lock").classList.add("hidden");
+      } else {
+        alert("Contraseña incorrecta. Por favor, verifica la clave.");
+      }
+    }
+
+    function setEstuvoEnObra(estuvo) {
+      estuvoEnObra = estuvo;
+      document.getElementById("paso-cumplimiento").classList.toggle("hidden", !estuvo);
+      document.getElementById("motivo-no-obra").classList.toggle("hidden", estuvo);
+    }
+
+    function setCumplioPlan(cumplio) {
+      cumplioPlan = cumplio;
+      document.getElementById("motivo-no-plan").classList.toggle("hidden", cumplio);
+    }
+
+    function setMotivoNoObra(motivo) {
+      document.getElementById("motivo-no-obra-otro").value = motivo;
+    }
+
+    // CONSTRUIR TEXTO Y ENVIAR POR WHATSAPP
+    function generarTextoParte() {
+      const fecha = document.getElementById("input-fecha").value;
+      const obra = document.getElementById("input-obra").value.trim();
+
+      if (!obra) {
+        alert("Por favor, escribe el nombre o código de la obra antes de enviar.");
+        return null;
+      }
+      
+      let texto = `📋 *PARTE DIARIO DE OBRA*\n`;
+      texto += `👤 *Operario:* ${usuarioActual}\n`;
+      texto += `📅 *Fecha:* ${fecha}\n`;
+      texto += `🏗️ *Obra:* ${obra}\n`;
+      texto += `-----------------------------------\n`;
+
+      if (estuvoEnObra) {
+        texto += `✅ *Asistencia:* Estuvo en obra todo el tiempo.\n`;
+        if (cumplioPlan) {
+          texto += `👍 *Planificación:* Realizada 100% como estaba previsto.\n`;
+        } else {
+          const motivoPlan = document.getElementById("texto-no-plan").value;
+          texto += `⚠️ *Planificación NO completada.*\n*Motivo:* ${motivoPlan || 'Sin especificar'}\n`;
+        }
+      } else {
+        const motivoObra = document.getElementById("motivo-no-obra-otro").value;
+        texto += `❌ *Asistencia:* NO estuvo en obra.\n*Motivo:* ${motivoObra || 'Sin especificar'}\n`;
+      }
+
+      return texto;
+    }
+
+    function enviarAWhatsApp(telefono) {
+      const mensaje = generarTextoParte();
+      if (!mensaje) return;
+      
+      const url = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
+      window.open(url, '_blank');
+    }
+
+    function enviarAAmbosSupervisores() {
+      const mensaje = generarTextoParte();
+      if (!mensaje) return;
+
+      enviarAWhatsApp(SUPERVISOR_1);
+      
+      setTimeout(() => {
+        enviarAWhatsApp(SUPERVISOR_2);
+      }, 1200);
+    }
+  </script>
+</body>
+</html>
